@@ -12,6 +12,7 @@ spring:
       chat:
         options:
           model: qwen3.8-27b
+          multi-model: true
           temperature: 0.5
       embedding:
         options:

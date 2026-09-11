@@ -11,6 +11,7 @@ spring:
         api-key: ${AI_DASHSCOPE_API_KEY}
         options:
           model: qwen3.8-27b
+          multi-model: true
 
     ollama:
       base-url: http://localhost:11434

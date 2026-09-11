@@ -9,6 +9,7 @@ spring:
       chat:
         options:
           model: qwen3.8-27b
+          multi-model: true
     mcp:
       server:
         name: xiyan-server    # MCP服务器名称

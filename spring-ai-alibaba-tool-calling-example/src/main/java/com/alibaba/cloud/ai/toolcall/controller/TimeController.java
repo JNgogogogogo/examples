@@ -16,7 +16,10 @@
 package com.alibaba.cloud.ai.toolcall.controller;
 
 import com.alibaba.cloud.ai.toolcall.component.TimeTools;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,6 +28,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/time")
 public class TimeController {
+
+    private static final Logger log = LoggerFactory.getLogger(TimeController.class);
 
     private final ChatClient dashScopeChatClient;
 
@@ -42,7 +47,10 @@ public class TimeController {
     @GetMapping("/chat")
     public String simpleChat(@RequestParam(value = "query", defaultValue = "请告诉我现在北京时间几点了") String query) {
 
-        return dashScopeChatClient.prompt(query).call().content();
+        String content = dashScopeChatClient.prompt(query)
+                .call().content();
+
+        return content;
     }
 
     /**
@@ -51,7 +59,11 @@ public class TimeController {
     @GetMapping("/chat-tool-method")
     public String chatWithTimeFunction(@RequestParam(value = "query", defaultValue = "请告诉我现在北京时间几点了") String query) {
 
-        return dashScopeChatClient.prompt(query).tools(timeTools).call().content();
+        String content = dashScopeChatClient.prompt(query)
+                .tools(timeTools)
+                .call().content();
+
+        return content;
     }
 
 }

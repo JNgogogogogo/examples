@@ -8,6 +8,7 @@ spring:
       chat:
         options:
           model: qwen3.8-27b
+          multi-model: true
     memory:
       redis:
         host: localhost

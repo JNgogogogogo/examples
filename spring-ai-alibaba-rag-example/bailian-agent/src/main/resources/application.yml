@@ -10,4 +10,5 @@ spring:
       chat:
         options:
           model: qwen3.8-27b
+          multi-model: true
       #workspace-id: ${AI_DASHSCOPE_WORKSPACE_ID} #选填，如果不填写，则默认使用应用的默认工作区

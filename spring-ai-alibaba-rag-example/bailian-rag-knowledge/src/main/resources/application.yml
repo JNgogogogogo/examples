@@ -8,4 +8,5 @@ spring:
       chat:
         options:
           model: qwen3.8-27b
+          multi-model: true
       # workspace-id: ${AI_DASHSCOPE_WORKSPACE_ID}
