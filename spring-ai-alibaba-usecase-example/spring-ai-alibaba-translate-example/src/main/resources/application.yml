@@ -26,6 +26,9 @@ spring:
           model: ${OLLAMA_MODEL}
     dashscope:
       api-key: ${AI_DASHSCOPE_API_KEY:your_api_key_here}
+      chat:
+        options:
+          model: qwen3.8-27b
 
 server:
   port: 8080

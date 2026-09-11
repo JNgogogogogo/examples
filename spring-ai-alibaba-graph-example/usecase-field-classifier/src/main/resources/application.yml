@@ -20,7 +20,7 @@ spring:
           model: text-embedding-v1
       chat:
         options:
-          model: qwen-max
+          model: qwen3.8-27b
 
 
 mybatis-plus:

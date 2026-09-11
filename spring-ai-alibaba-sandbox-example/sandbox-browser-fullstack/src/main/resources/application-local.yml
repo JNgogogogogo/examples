@@ -6,6 +6,9 @@ spring:
   ai:
     dashscope:
       api-key: your-api-key-here
+      chat:
+        options:
+          model: qwen3.8-27b
 
 # Or use environment variable
 # api-key: ${AI_DASHSCOPE_API_KEY}

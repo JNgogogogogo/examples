@@ -11,4 +11,4 @@ spring:
 
       chat:
         options:
-          model: qwq-plus
+          model: qwen3.8-27b

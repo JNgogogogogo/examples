@@ -8,3 +8,6 @@ spring:
     dashscope:
       index-name: test_knowledge
       api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen3.8-27b

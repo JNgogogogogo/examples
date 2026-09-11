@@ -4,6 +4,9 @@ spring:
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY:your-dashscope-api-key}
+      chat:
+        options:
+          model: qwen3.8-27b
   thymeleaf:
     cache: false
   datasource:

@@ -6,6 +6,6 @@
       api-key: ${DASHSCOPE_API_KEY}
       chat:
         options:
-          model: 'qwen3-max-2026-01-23'
+          model: qwen3.8-27b
  server:
    port: 8080

@@ -21,6 +21,9 @@ spring:
           completion: false
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen3.8-27b
 
     alibaba:
       # MCP Gateway 配置

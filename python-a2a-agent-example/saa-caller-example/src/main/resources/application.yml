@@ -13,6 +13,9 @@ spring:
       # DashScope configuration (for local agent if needed)
       dashscope:
         api-key: ${DASHSCOPE_API_KEY:}
+        chat:
+          options:
+            model: qwen3.8-27b
 
       # A2A configuration
       a2a:

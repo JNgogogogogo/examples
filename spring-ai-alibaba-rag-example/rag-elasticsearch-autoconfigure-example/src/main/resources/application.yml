@@ -10,7 +10,7 @@ spring:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
         options:
-          model: qwen-plus-2025-04-28
+          model: qwen3.8-27b
       embedding:
         options:
           model: text-embedding-v1
