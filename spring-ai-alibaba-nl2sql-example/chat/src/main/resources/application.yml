@@ -1,6 +1,32 @@
 server:
   port: 8065 # 服务器端口配置
 spring:
+  # ============ 平台元数据库 ============
+  # 用途：MyBatis-Plus 的三张内部表（user_prompt_config / datasource / agent_datasource），
+  #       以及 agent / chat_session / chat_message 等表。
+  # 本地环境：Docker 容器 mysql:8.4，宿主端口 3307（容器内 3306）。
+  datasource:
+    url: "jdbc:mysql://127.0.0.1:3307/nl2sql_meta?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai"
+    username: ${NL2SQL_DB_USERNAME:diss}
+    password: ${NL2SQL_DB_PASSWORD:diss}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+  # 建表脚本与初始数据来自 spring-ai-alibaba-nl2sql-management-1.0.0.3.jar 内的
+  # sql/schema.sql、sql/data.sql（由 classpath 加载）。
+  # mode 必须显式设为 always：非内嵌数据库（MySQL）默认不会执行初始化脚本。
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/schema.sql
+      data-locations: classpath:sql/data.sql
+      continue-on-error: true
+      separator: ;
+      encoding: utf-8
+  # 本工程实体全部走 MyBatis-Plus，JPA 只是依赖传递进来的，不参与建表
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
   thymeleaf:
     enabled: true
     check-template-location: true
@@ -22,6 +48,11 @@ spring:
         options:
           model: qwen3.8-27b
           multi-model: true
+      # 实际生效的向量化模型：启动日志中 EmbeddingModel 为 DashScopeEmbeddingModel，
+      # 因此这一项才是真正被使用的配置（由 spring-ai-alibaba-starter-dashscope 提供）
+      embedding:
+        options:
+          model: text-embedding-v4
     mcp:
       server:
         name: xiyan-server    # MCP服务器名称
@@ -44,11 +75,22 @@ spring:
       base-url: https://dashscope.aliyuncs.com/compatible-mode
       api-key: ${AI_DASHSCOPE_API_KEY}
       model: qwen3.8-27b
+      # 说明：实测启动日志显示注入 SimpleVectorStoreService 的是 DashScopeEmbeddingModel，
+      # 故此处的 embedding 配置并非生效路径（保留以对齐上游模板）；生效项见上面的
+      # spring.ai.dashscope.embedding.options.model。
+      embedding:
+        model: text-embedding-v4
+    alibaba:
+      nl2sql:
+        code-executor:
+          code-pool-executor: ai_simulation
+# ============ 业务数据库 ============
+# NL2SQL 要读取 Schema、生成并执行 SQL 的目标库（与上面的元数据库分开，避免内部表污染 Schema 召回）
 chatBi:
   dbConfig:
-    url:
-    username:
-    password:
+    url: "jdbc:mysql://127.0.0.1:3307/nl2sql_demo?useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai"
+    username: ${NL2SQL_DB_USERNAME:diss}
+    password: ${NL2SQL_DB_PASSWORD:diss}
     schema:
     connection-type: jdbc
     dialect-type: mysql
@@ -60,3 +102,45 @@ rest:
 webclient:
   response:
     timeout: 600 # 响应超时时间（秒）
+
+# ============ MyBatis-Plus ============
+# 配置来自 spring-ai-alibaba-nl2sql-management jar 内自带的 application.yml（保持一致）
+mybatis-plus:
+  configuration:
+    # 开启驼峰命名转换
+    map-underscore-to-camel-case: true
+    # SQL 日志打印（生产环境建议关闭或使用 slf4j）
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    # 设置全局缓存开关
+    cache-enabled: true
+    # 延迟加载的核心开关
+    lazy-loading-enabled: true
+    # 按需加载属性
+    aggressive-lazy-loading: false
+    # 设置默认执行器类型
+    default-executor-type: reuse
+    # 设置默认语句超时时间
+    default-statement-timeout: 30
+  global-config:
+    # 数据库配置
+    db-config:
+      # 主键类型（AUTO 自增，ASSIGN_ID 雪花算法，ASSIGN_UUID UUID）
+      id-type: auto
+      # 逻辑删除字段名
+      logic-delete-field: deleted
+      # 逻辑删除值（删除时设置的值）
+      logic-delete-value: 1
+      # 逻辑未删除值（正常时的值）
+      logic-not-delete-value: 0
+      # 字段验证策略
+      insert-strategy: not_null
+      update-strategy: not_null
+      where-strategy: not_null
+    # 关闭 MyBatis Plus 启动横幅
+    banner: false
+    # 是否开启 LOGO
+    enable-sql-runner: false
+  # Mapper XML 文件位置（如果有的话）
+  mapper-locations: classpath*:/mapper/**/*.xml
+  # 实体扫描，多个package用逗号或者分号分隔
+  type-aliases-package: com.alibaba.cloud.ai.entity

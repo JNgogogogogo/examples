@@ -40,7 +40,7 @@ spring:
         # Nacos 注册中心配置
         nacos:
           server-addr: localhost:8848
-          namespace: public
+          namespace: agi
           username: nacos
           password: nacos
 

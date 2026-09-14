@@ -41,6 +41,13 @@
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-nl2sql</artifactId>
             <version>${spring-ai-alibaba.version}</version>
+            <!-- 排除旧版 MCP Java SDK（0.10.0），原因见 chat/pom.xml 中的同名说明 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>io.modelcontextprotocol.sdk</groupId>
+                    <artifactId>mcp</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>

@@ -23,7 +23,7 @@ spring:
     alibaba:
       mcp:
         nacos:
-          namespace: 0908ca08-c382-404c-9d96-37fe1628b183
+          namespace: agi
           server-addr: 127.0.0.1:8848
           username: nacos
           password: nacos

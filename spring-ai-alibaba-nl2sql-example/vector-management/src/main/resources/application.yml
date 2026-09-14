@@ -1,6 +1,27 @@
 server:
   port: 8061 # 服务器端口配置
 spring:
+  # ============ 平台元数据库 ============
+  # 与 chat 模块共用同一个元数据库（MyBatis-Plus 内部表）
+  # 本地环境：Docker 容器 mysql:8.4，宿主端口 3307（容器内 3306）
+  datasource:
+    url: "jdbc:mysql://127.0.0.1:3307/nl2sql_meta?useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai"
+    username: ${NL2SQL_DB_USERNAME:diss}
+    password: ${NL2SQL_DB_PASSWORD:diss}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:sql/schema.sql
+      data-locations: classpath:sql/data.sql
+      continue-on-error: true
+      separator: ;
+      encoding: utf-8
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
   thymeleaf:
     enabled: true
     check-template-location: true
@@ -17,11 +38,15 @@ spring:
       static-locations: classpath:/static/
   ai:
     dashscope:
-      api-key:
+      api-key: ${AI_DASHSCOPE_API_KEY}
       chat:
         options:
           model: qwen3.8-27b
           multi-model: true
+      # 实际生效的向量化模型（启动日志中 EmbeddingModel 为 DashScopeEmbeddingModel）
+      embedding:
+        options:
+          model: text-embedding-v4
     mcp:
       server:
         name: xiyan-server    # MCP服务器名称
@@ -41,13 +66,46 @@ spring:
         accessKeySecret:
     openai:
       base-url: https://dashscope.aliyuncs.com/compatible-mode
-      api-key:
+      api-key: ${AI_DASHSCOPE_API_KEY}
       model: qwen3.8-27b
+      # 说明：实测注入的是 DashScopeEmbeddingModel，此处 embedding 并非生效路径（保留以对齐上游模板）
+      embedding:
+        model: text-embedding-v4
+    alibaba:
+      nl2sql:
+        code-executor:
+          code-pool-executor: ai_simulation
+# ============ 业务数据库 ============
+# Schema 初始化（/simple/init/schema、/init/schema）读取的就是这个库
 chatBi:
   dbConfig:
-    url:
-    username:
-    password:
+    url: "jdbc:mysql://127.0.0.1:3307/nl2sql_demo?useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Shanghai"
+    username: ${NL2SQL_DB_USERNAME:diss}
+    password: ${NL2SQL_DB_PASSWORD:diss}
     schema:
     connection-type: jdbc
     dialect-type: mysql
+
+# ============ MyBatis-Plus ============
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    cache-enabled: true
+    lazy-loading-enabled: true
+    aggressive-lazy-loading: false
+    default-executor-type: reuse
+    default-statement-timeout: 30
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      insert-strategy: not_null
+      update-strategy: not_null
+      where-strategy: not_null
+    banner: false
+    enable-sql-runner: false
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.alibaba.cloud.ai.entity

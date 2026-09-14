@@ -22,6 +22,20 @@
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-nl2sql</artifactId>
             <version>${spring-ai-alibaba.version}</version>
+            <!--
+              排除旧版 MCP Java SDK（io.modelcontextprotocol.sdk:mcp:0.10.0）。
+              nl2sql 1.0.0.3 的传递链会引入它，但 examples 父 POM 的 spring-ai-bom 把 Spring AI
+              统一到 1.1.8，其 MCP 自动配置需要新版模块化 SDK（mcp-core:0.18.3）。
+              两代 SDK 都定义了 io.modelcontextprotocol.spec.McpSchema，同时存在会在启动时报
+              IncompatibleClassChangeError: McpSchema$ElicitRequest cannot implement sealed interface McpSchema$Request。
+              nl2sql 自身的 class 文件不引用 MCP SDK（已用 strings 校验为 0 处），故可安全排除。
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>io.modelcontextprotocol.sdk</groupId>
+                    <artifactId>mcp</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>

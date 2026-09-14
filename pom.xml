@@ -41,14 +41,14 @@
 		<maven.compiler.target>17</maven.compiler.target>
 
 		<!-- Spring AI -->
-		<spring-ai.version>1.1.0</spring-ai.version>
+		<spring-ai.version>1.1.8</spring-ai.version>
 		<!-- Spring Boot -->
 		<spring-boot.version>3.5.7</spring-boot.version>
 
 		<!-- Spring AI Alibaba -->
 		<!-- Install Spring AI Alibaba in your local. -->
 		<spring-ai-alibaba.version>1.1.0.0</spring-ai-alibaba.version>
-		<spring-ai-alibaba-extensions.version>1.1.2.1</spring-ai-alibaba-extensions.version>
+		<spring-ai-alibaba-extensions.version>1.1.2.3</spring-ai-alibaba-extensions.version>
 
 		<!-- maven plugin -->
 		<maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>

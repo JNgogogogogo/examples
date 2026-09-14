@@ -19,6 +19,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-mcp-annotations</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-mcp-registry</artifactId>
         </dependency>
