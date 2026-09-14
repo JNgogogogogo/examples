@@ -147,7 +147,7 @@ curl -G 'http://127.0.0.1:8080/ai/cloud/rag' --data-urlencode 'message=如何快
 spring:
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${AI_DASHSCOPE_API_KEY}
     elasticsearch:
       uris: http://localhost:9200
       username: ${ELASTICSEARCH_USERNAME:}

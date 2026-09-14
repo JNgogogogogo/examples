@@ -3,7 +3,7 @@
     name: subagent-personal-assistant-example
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${AI_DASHSCOPE_API_KEY}
       chat:
         options:
           model: qwen3.8-27b

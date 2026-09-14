@@ -128,7 +128,7 @@ spring:
   ai:
     # dashscope configuration
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${AI_DASHSCOPE_API_KEY}
       chat:
         options:
           model: qwen-plus-2025-04-28
@@ -160,7 +160,7 @@ spring:
   ai:
     # dashscope configuration
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${AI_DASHSCOPE_API_KEY}
       chat:
         options:
           model: qwen-plus-2025-04-28

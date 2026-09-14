@@ -123,7 +123,7 @@ curl -X DELETE 'http://localhost:8080/ai/rag/deleteFiles?fileId={fileId}'
        password: ${DB_PASSWORD}
      ai:
        dashscope:
-         api-key: ${DASHSCOPE_API_KEY}
+         api-key: ${AI_DASHSCOPE_API_KEY}
    ```
 
 3. **启动应用**
@@ -175,7 +175,7 @@ spring:
     show-sql: false
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${AI_DASHSCOPE_API_KEY}
       chat:
         options:
           model: qwen-turbo

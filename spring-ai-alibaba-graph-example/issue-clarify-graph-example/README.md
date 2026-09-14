@@ -73,7 +73,7 @@ spring:
   ai:
     dashscope:
       index-name: your_knowledge_index_name  # 替换为你的知识库索引名
-      api-key: ${DASHSCOPE_API_KEY}          # 建议使用环境变量
+      api-key: ${AI_DASHSCOPE_API_KEY}          # 建议使用环境变量
 ```
 
 ### 运行

@@ -130,7 +130,7 @@ http://localhost:8080/ai/chat?prompt="如何使用 spring ai alibaba 开发 ai �
 spring:
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${AI_DASHSCOPE_API_KEY}
     milvus:
       client:
         host: localhost
