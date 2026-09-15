@@ -19,13 +19,14 @@ package com.alibaba.cloud.ai.graph.reflection;
 import com.alibaba.cloud.ai.graph.*;
 import com.alibaba.cloud.ai.graph.action.AsyncNodeAction;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
-import com.alibaba.cloud.ai.graph.agent.ReflectAgent;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.alibaba.cloud.ai.graph.node.LlmNode;
 import com.alibaba.cloud.ai.graph.state.strategy.AppendStrategy;
+import com.alibaba.cloud.ai.graph.state.strategy.ReplaceStrategy;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.MessageType;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
@@ -36,11 +37,26 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
+
+import static com.alibaba.cloud.ai.graph.StateGraph.END;
+import static com.alibaba.cloud.ai.graph.StateGraph.START;
+import static com.alibaba.cloud.ai.graph.action.AsyncEdgeAction.edge_async;
 
 
 @Configuration
 public class RelectionAutoconfiguration {
+
+	public static final String MESSAGES = "messages";
+
+	public static final String ITERATION_NUM = "iteration_num";
+
+	private static final String GRAPH_NODE_ID = "call_model";
+
+	private static final String REFLECTION_NODE_ID = "judge_response";
+
+	private static final int MAX_ITERATIONS = 2;
 
 	public static class AssistantGraphNode implements NodeAction {
 
@@ -48,7 +64,7 @@ public class RelectionAutoconfiguration {
 
 		private SystemPromptTemplate systemPromptTemplate;
 
-		private final String NODE_ID = "call_model";
+		private final String NODE_ID = GRAPH_NODE_ID;
 
 		private static final String CLASSIFIER_PROMPT_TEMPLATE = """
 					You are an essay assistant tasked with writing excellent 5-paragraph essays.
@@ -63,7 +79,7 @@ public class RelectionAutoconfiguration {
 			this.llmNode = LlmNode.builder()
 				.systemPromptTemplate(systemPromptTemplate.render())
 				.chatClient(chatClient)
-				.messagesKey("messages")
+				.messagesKey(MESSAGES)
 				.build();
 		}
 
@@ -92,23 +108,23 @@ public class RelectionAutoconfiguration {
 		@Override
 		public Map<String, Object> apply(OverAllState overAllState) throws Exception {
 
-			List<Message> messages = (List<Message>) overAllState.value(ReflectAgent.MESSAGES).get();
+			List<Message> messages = (List<Message>) overAllState.value(MESSAGES).get();
 
 			KeyStrategyFactory keyStrategyFactory = () -> {
 				HashMap<String, KeyStrategy> keyStrategyHashMap = new HashMap<>();
 
-				keyStrategyHashMap.put(ReflectAgent.MESSAGES, new AppendStrategy());
+				keyStrategyHashMap.put(MESSAGES, new AppendStrategy());
 				return keyStrategyHashMap;
 			};
 
 			StateGraph stateGraph = new StateGraph(keyStrategyFactory).addNode(this.NODE_ID, AsyncNodeAction.node_async(llmNode))
-				.addEdge(StateGraph.START, this.NODE_ID)
-				.addEdge(this.NODE_ID, StateGraph.END);
+				.addEdge(START, this.NODE_ID)
+				.addEdge(this.NODE_ID, END);
 
-			OverAllState invokeState = stateGraph.compile().call(Map.of(ReflectAgent.MESSAGES, messages)).get();
-			List<Message> reactMessages = (List<Message>) invokeState.value(ReflectAgent.MESSAGES).orElseThrow();
+			OverAllState invokeState = stateGraph.compile().invoke(Map.of(MESSAGES, messages)).get();
+			List<Message> reactMessages = (List<Message>) invokeState.value(MESSAGES).orElseThrow();
 
-			return Map.of(ReflectAgent.MESSAGES, reactMessages);
+			return Map.of(MESSAGES, reactMessages);
 
 		}
 
@@ -118,7 +134,7 @@ public class RelectionAutoconfiguration {
 
 		private final LlmNode llmNode;
 
-		private final String NODE_ID = "judge_response";
+		private final String NODE_ID = REFLECTION_NODE_ID;
 
 		private SystemPromptTemplate systemPromptTemplate;
 
@@ -142,7 +158,7 @@ public class RelectionAutoconfiguration {
 			this.llmNode = LlmNode.builder()
 				.chatClient(chatClient)
 				.systemPromptTemplate(systemPromptTemplate.render())
-				.messagesKey(ReflectAgent.MESSAGES)
+				.messagesKey(MESSAGES)
 				.build();
 
 		}
@@ -171,23 +187,23 @@ public class RelectionAutoconfiguration {
 
 		@Override
 		public Map<String, Object> apply(OverAllState allState) throws Exception {
-			List<Message> messages = (List<Message>) allState.value(ReflectAgent.MESSAGES).get();
+			List<Message> messages = (List<Message>) allState.value(MESSAGES).get();
 
 
 			KeyStrategyFactory keyStrategyFactory = () -> {
 				HashMap<String, KeyStrategy> keyStrategyHashMap = new HashMap<>();
 
-				keyStrategyHashMap.put(ReflectAgent.MESSAGES, new AppendStrategy());
+				keyStrategyHashMap.put(MESSAGES, new AppendStrategy());
 				return keyStrategyHashMap;
 			};
 
 			StateGraph stateGraph = new StateGraph(keyStrategyFactory).addNode(this.NODE_ID, AsyncNodeAction.node_async(llmNode))
-				.addEdge(StateGraph.START, this.NODE_ID)
-				.addEdge(this.NODE_ID, StateGraph.END);
+				.addEdge(START, this.NODE_ID)
+				.addEdge(this.NODE_ID, END);
 
 			CompiledGraph compile = stateGraph.compile();
 
-			OverAllState invokeState = compile.call(Map.of(ReflectAgent.MESSAGES, messages)).get();
+			OverAllState invokeState = compile.invoke(Map.of(MESSAGES, messages)).get();
 
 			UnaryOperator<List<Message>> convertLastToUserMessage = messageList -> {
 				int size = messageList.size();
@@ -198,10 +214,10 @@ public class RelectionAutoconfiguration {
 				return messageList;
 			};
 
-			List<Message> reactMessages = (List<Message>) invokeState.value(ReflectAgent.MESSAGES).orElseThrow();
+			List<Message> reactMessages = (List<Message>) invokeState.value(MESSAGES).orElseThrow();
 			convertLastToUserMessage.apply(reactMessages);
 
-			return Map.of(ReflectAgent.MESSAGES, reactMessages);
+			return Map.of(MESSAGES, reactMessages);
 
 		}
 
@@ -218,13 +234,63 @@ public class RelectionAutoconfiguration {
 		AssistantGraphNode assistantGraphNode = AssistantGraphNode.builder().chatClient(chatClient).build();
 		JudgeGraphNode judgeGraphNode = JudgeGraphNode.builder().chatClient(chatClient).build();
 
-		ReflectAgent reflectAgent = ReflectAgent.builder()
-			.graph(assistantGraphNode)
-			.reflection(judgeGraphNode)
-			.maxIterations(2)
-			.build();
+		KeyStrategyFactory keyStrategyFactory = () -> {
+			HashMap<String, KeyStrategy> keyStrategyHashMap = new HashMap<>();
+			keyStrategyHashMap.put(MESSAGES, new ReplaceStrategy());
+			keyStrategyHashMap.put(ITERATION_NUM, new ReplaceStrategy());
+			return keyStrategyHashMap;
+		};
 
-		return reflectAgent.getAndCompileGraph();
+		StateGraph stateGraph = new StateGraph(keyStrategyFactory)
+			.addNode(GRAPH_NODE_ID, AsyncNodeAction.node_async(assistantGraphNode))
+			.addNode(REFLECTION_NODE_ID, AsyncNodeAction.node_async(judgeGraphNode))
+			.addEdge(START, GRAPH_NODE_ID)
+			.addConditionalEdges(GRAPH_NODE_ID, edge_async(RelectionAutoconfiguration::routeAfterAssistant),
+					Map.of(REFLECTION_NODE_ID, REFLECTION_NODE_ID, END, END))
+			.addConditionalEdges(REFLECTION_NODE_ID, edge_async(RelectionAutoconfiguration::routeAfterJudge),
+					Map.of(GRAPH_NODE_ID, GRAPH_NODE_ID, END, END));
+
+		return stateGraph.compile();
+	}
+
+	/**
+	 * After the assistant responds, decide whether to run another judging round or stop,
+	 * honoring the iteration limit (mirrors the former ReflectAgent#graphCount).
+	 */
+	private static String routeAfterAssistant(OverAllState state) throws Exception {
+		Optional<Object> iterationNumOptional = state.value(ITERATION_NUM);
+
+		if (!iterationNumOptional.isPresent()) {
+			state.updateState(Map.of(ITERATION_NUM, 1));
+		}
+		else {
+			Integer iterationNum = (Integer) iterationNumOptional.get();
+			if (iterationNum >= MAX_ITERATIONS) {
+				state.updateState(Map.of(ITERATION_NUM, 0));
+				return END;
+			}
+			state.updateState(Map.of(ITERATION_NUM, iterationNum + 1));
+		}
+
+		return REFLECTION_NODE_ID;
+	}
+
+	/**
+	 * After the judge critiques, keep revising while the last message comes from a user
+	 * (mirrors the former ReflectAgent#apply).
+	 */
+	private static String routeAfterJudge(OverAllState state) throws Exception {
+		List<Message> messages = (List<Message>) state.value(MESSAGES).orElse(List.of());
+
+		if (messages.isEmpty()) {
+			return END;
+		}
+
+		if (messages.get(messages.size() - 1).getMessageType().equals(MessageType.ASSISTANT)) {
+			return END;
+		}
+
+		return GRAPH_NODE_ID;
 	}
 
 }

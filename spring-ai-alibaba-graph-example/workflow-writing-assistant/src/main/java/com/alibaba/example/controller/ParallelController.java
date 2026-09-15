@@ -56,14 +56,14 @@ public class ParallelController {
 
 	@GetMapping
 	public Map<String, Object> analyze(@RequestParam("text") String text) {
-		return engine.call(Map.of("inputText", text)).get().data();
+		return engine.invoke(Map.of("inputText", text)).get().data();
 	}
 
 	@GetMapping(path = "/stream", produces = "text/event-stream")
 	public Flux<Map<String, Object>> analyzeStream(@RequestParam("text") String text) {
 		RunnableConfig cfg = RunnableConfig.builder().streamMode(CompiledGraph.StreamMode.SNAPSHOTS).build();
 		return Flux.create(sink -> {
-            engine.fluxStream(Map.of("inputText", text), cfg).doOnNext(
+            engine.stream(Map.of("inputText", text), cfg).doOnNext(
                     node -> sink.next(node.state().data())
             ).doOnComplete(sink::complete).doOnError(sink::error).subscribe();
         });

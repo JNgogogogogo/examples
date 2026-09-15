@@ -41,13 +41,13 @@ public class GraphRunController {
 
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<NodeOutput> stream(@RequestBody Map<String, Object> inputs) throws Exception {
-        return graph.fluxStream(inputs);
+        return graph.stream(inputs);
     }
 
 
     @PostMapping(value = "/invoke")
     public OverAllState invoke(@RequestBody Map<String, Object> inputs) {
-        OverAllState state = graph.call(inputs).orElse(null);
+        OverAllState state = graph.invoke(inputs).orElse(null);
         return state;
     }
 

@@ -20,14 +20,14 @@ package com.alibaba.cloud.ai.graph.controller;
 import com.alibaba.cloud.ai.graph.CompiledGraph;
 import com.alibaba.cloud.ai.graph.NodeOutput;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -38,6 +38,8 @@ import java.util.Map;
 public class GraphProcess {
 
     private static final Logger logger = LoggerFactory.getLogger(GraphProcess.class);
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private CompiledGraph compiledGraph;
 
@@ -51,13 +53,17 @@ public class GraphProcess {
                     logger.info("output = {}", output);
                     String nodeName = output.node();
                     String content;
-                    if (output instanceof StreamingOutput streamingOutput) {
-                        content = JSON.toJSONString(Map.of(nodeName, streamingOutput.chunk()));
-                    } else {
-                        JSONObject nodeOutput = new JSONObject();
-                        nodeOutput.put("data", output.state().data());
-                        nodeOutput.put("node", nodeName);
-                        content = JSON.toJSONString(nodeOutput);
+                    try {
+                        if (output instanceof StreamingOutput streamingOutput) {
+                            content = OBJECT_MAPPER.writeValueAsString(Map.of(nodeName, streamingOutput.chunk()));
+                        } else {
+                            Map<Object, Object> nodeOutput = new LinkedHashMap<>();
+                            nodeOutput.put("data", output.state().data());
+                            nodeOutput.put("node", nodeName);
+                            content = OBJECT_MAPPER.writeValueAsString(nodeOutput);
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to serialize node output", e);
                     }
                     sink.tryEmitNext(ServerSentEvent.builder(content).build());
                 })

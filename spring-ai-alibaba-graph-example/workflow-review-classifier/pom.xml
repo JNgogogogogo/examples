@@ -36,6 +36,11 @@
 			</exclusions>
 		</dependency>
 		<dependency>
+			<groupId>com.alibaba.cloud.ai</groupId>
+			<artifactId>spring-ai-alibaba-starter-builtin-nodes</artifactId>
+			<version>${spring-ai-alibaba.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.10.1</version>

@@ -38,9 +38,9 @@ public class GraphController {
 	public ResponseEntity<Map<String, Object>> invoke(@RequestBody Map<String, Object> inputs) {
 
 		// invoke graph
-		var resultFuture = graph.call(inputs);
+		var resultState = graph.invoke(inputs);
 
-		return ResponseEntity.ok(resultFuture.get().data());
+		return ResponseEntity.ok(resultState.get().data());
 	}
 
 	@GetMapping(path = "/mock/http")

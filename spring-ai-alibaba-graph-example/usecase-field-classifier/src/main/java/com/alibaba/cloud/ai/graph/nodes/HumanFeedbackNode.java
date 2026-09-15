@@ -38,14 +38,11 @@ public class HumanFeedbackNode implements NodeAction {
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws GraphRunnerException {
-        if (state.humanFeedback() == null || !state.isResume()) {
-            throw RunnableErrors.subGraphInterrupt.exception("interrupt");
-        }
-
         logger.info("human_feedback node is running.");
         HashMap<String, Object> resultMap = new HashMap<>();
 
-        Map<String, Object> feedbackData = state.humanFeedback().data();
+        // human feedback is merged into the state via updateState() before resuming
+        Map<String, Object> feedbackData = state.data();
         boolean isApproved = Boolean.parseBoolean(String.valueOf(feedbackData.getOrDefault("feed_back", true)));
         String feedbackReason = (String) feedbackData.getOrDefault("feedback_reason", "");
         String nextStep = isApproved ? "saveTool" : "clft";

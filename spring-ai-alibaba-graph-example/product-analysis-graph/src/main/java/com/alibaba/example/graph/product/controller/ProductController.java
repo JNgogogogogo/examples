@@ -37,7 +37,7 @@ public class ProductController {
     private final CompiledGraph compiledGraph;
 
     public ProductController(@Qualifier("productAnalysisGraph") StateGraph productAnalysisGraph) throws GraphStateException {
-        SaverConfig saverConfig = SaverConfig.builder().register(SaverEnum.MEMORY.getValue(), new MemorySaver()).build();
+        SaverConfig saverConfig = SaverConfig.builder().register(new MemorySaver()).build();
         this.compiledGraph = productAnalysisGraph.compile(CompileConfig.builder().saverConfig(saverConfig).build());
     }
 

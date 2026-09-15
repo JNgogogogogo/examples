@@ -75,7 +75,7 @@ public class WeatherService implements Function<WeatherService.Request, WeatherS
 			return null;
 		}
 		String location = WeatherUtils.preprocessLocation(request.city());
-		String url = UriComponentsBuilder.fromHttpUrl(WEATHER_API_URL)
+		String url = UriComponentsBuilder.fromUriString(WEATHER_API_URL)
 			.queryParam("q", location)
 			.queryParam("days", request.days())
 			.toUriString();

@@ -35,7 +35,7 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <mybatis-plus-boot-starter.version>3.5.6</mybatis-plus-boot-starter.version>
         <mysql-connector-j.version>8.2.0</mysql-connector-j.version>
-        <lombok.version>1.18.30</lombok.version>
+        <lombok.version>1.18.42</lombok.version>
         <mybatis-spring.version>3.0.3</mybatis-spring.version>
 
     </properties>
@@ -56,6 +56,12 @@
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-graph-core</artifactId>
+            <version>${spring-ai-alibaba.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-builtin-nodes</artifactId>
             <version>${spring-ai-alibaba.version}</version>
         </dependency>
 

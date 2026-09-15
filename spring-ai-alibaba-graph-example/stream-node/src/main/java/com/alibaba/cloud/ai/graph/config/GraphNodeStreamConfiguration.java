@@ -56,12 +56,8 @@ public class GraphNodeStreamConfiguration {
                 .addEdge(StateGraph.START, "expander")
                 .addEdge("expander", StateGraph.END);
 
-        // 添加 PlantUML 打印
-        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
-                "expander flow");
-        logger.info("\n=== expander UML Flow ===");
-        logger.info(representation.content());
-        logger.info("==================================\n");
+        // 以 ASCII 真布局打印图拓扑（分层布局，能画出分支与回路）
+        logger.info("\n{}", stateGraph.getGraph(GraphRepresentation.Type.ASCII, "expander flow").content());
 
         return stateGraph;
     }

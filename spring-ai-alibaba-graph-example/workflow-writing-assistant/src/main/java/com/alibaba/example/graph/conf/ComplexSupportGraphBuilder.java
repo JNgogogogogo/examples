@@ -23,12 +23,20 @@ import com.alibaba.cloud.ai.graph.KeyStrategyFactoryBuilder;
 import com.alibaba.cloud.ai.graph.StateGraph;
 import com.alibaba.cloud.ai.graph.action.AsyncNodeAction;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
+import com.alibaba.cloud.ai.graph.node.AnswerNode;
+import com.alibaba.cloud.ai.graph.node.DocumentExtractorNode;
+import com.alibaba.cloud.ai.graph.node.HttpNode;
+import com.alibaba.cloud.ai.graph.node.KnowledgeRetrievalNode;
+import com.alibaba.cloud.ai.graph.node.LlmNode;
+import com.alibaba.cloud.ai.graph.node.ParameterParsingNode;
+import com.alibaba.cloud.ai.graph.node.QuestionClassifierNode;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.resolution.ToolCallbackResolver;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -44,11 +52,11 @@ public class ComplexSupportGraphBuilder {
 
 	@Bean
 	public CompiledGraph buildGraph(ChatModel chatModel, VectorStore vectorStore,
-			ToolCallbackResolver toolCallbackResolver) throws GraphStateException {
+			ToolCallbackResolver toolCallbackResolver) throws GraphStateException, java.io.IOException {
 
 		// ChatClient
 		ChatClient chatClient = ChatClient.builder(chatModel).defaultAdvisors(new SimpleLoggerAdvisor())
-			.defaultOptions(DashScopeChatOptions.builder().withInternalToolExecutionEnabled(false).build()).build();
+			.defaultOptions(DashScopeChatOptions.builder().internalToolExecutionEnabled(false).build()).build();
 
 		KeyStrategyFactory keyStrategyFactory = new KeyStrategyFactoryBuilder()
 				.addPatternStrategy("input", (o1, o2) -> o2)
@@ -59,6 +67,7 @@ public class ComplexSupportGraphBuilder {
 				.addPatternStrategy("retrieved_docs", (o1, o2) -> o2)
 				.addPatternStrategy("filtered_docs", (o1, o2) -> o2)
 				.addPatternStrategy("http_response", (o1, o2) -> o2)
+				.addPatternStrategy("http_response_text", (o1, o2) -> o2)
 				.addPatternStrategy("llm_response", (o1, o2) -> o2)
 				.addPatternStrategy("tool_result", (o1, o2) -> o2)
 				.addPatternStrategy("human_feedback", (o1, o2) -> o2)
@@ -68,8 +77,13 @@ public class ComplexSupportGraphBuilder {
 		StateGraph graph = new StateGraph(keyStrategyFactory);
 
 		// —— 1. Document extraction ——
+		// DocumentExtractorNode in 2.0.0-M1.1 reads from the filesystem or URLs only,
+		// so resolve the bundled classpath doc to a real file path first.
+		ClassPathResource manualResource = new ClassPathResource("data/manual.txt");
+		String manualPath = manualResource.getFile().getAbsolutePath();
 		DocumentExtractorNode extractNode = DocumentExtractorNode.builder()
-			.fileList(List.of("data/manual.txt"))
+			.fileList(List.of(manualPath))
+			.inputIsArray(true)
 			.paramsKey("attachments")
 			.outputKey("docs")
 			.build();
@@ -92,6 +106,7 @@ public class ComplexSupportGraphBuilder {
 			.inputTextKey("input")
 			.categories(List.of("售后", "技术支持", "投诉", "咨询"))
 			.classificationInstructions(List.of("请仅返回最合适的类别名称String类型，例如：售后、运输、产品质量、其他；不要多余的标记或格式。 正确返回结果： 售后 "))
+			.outputKey("classifier_output")
 			.build();
 		graph.addNode("classify", AsyncNodeAction.node_async(qcNode));
 
@@ -127,30 +142,39 @@ public class ComplexSupportGraphBuilder {
 			.build();
 		graph.addNode("syncTicket", AsyncNodeAction.node_async(httpNode));
 
+		// HttpNode in 2.0.0-M1.1 stores a wrapper map {status, headers, body};
+		// flatten the body text for the downstream LlmNode which expects a string.
+		graph.addNode("extractHttpBody", AsyncNodeAction.node_async(state -> {
+			Object resp = state.value("http_response").orElse("");
+			String body = (resp instanceof Map<?, ?> wrapper && wrapper.get("body") != null)
+					? wrapper.get("body").toString() : resp.toString();
+			return Map.of("http_response_text", body);
+		}));
+
 		// —— 7. call LLM ——
 		LlmNode llmNode = LlmNode.builder()
 			.chatClient(chatClient)
 			.systemPromptTemplate("你是客服助手，请基于以下信息撰写回复：")
-			.userPromptTemplateKey("http_response")
+			.userPromptTemplateKey("http_response_text")
 			.messagesKey("user_prompt")
 			.outputKey("llm_response")
 			.build();
 		graph.addNode("invokeLLM", AsyncNodeAction.node_async(llmNode));
 
 		// —— 8. Perform a tool call (optional) ——
-		ToolNode toolNode = ToolNode.builder()
-			.llmResponseKey("llm_response")
-			.outputKey("tool_result")
-			.toolCallbackResolver(toolCallbackResolver)
-			.toolNames(List.of("sendEmail", "updateCRM"))
-			.build();
-		graph.addNode("invokeTool", AsyncNodeAction.node_async(toolNode));
+		// The demo registers no concrete tools, so forward the LLM reply text as the tool result.
+		// (ToolNode produces a ToolResponseMessage that fails state re-serialization when no tool was called.)
+		graph.addNode("invokeTool", AsyncNodeAction.node_async(state -> {
+			Object reply = state.value("llm_response").orElse("");
+			String text = (reply instanceof org.springframework.ai.chat.messages.AssistantMessage assistant)
+					? assistant.getText() : reply.toString();
+			return Map.of("tool_result", text != null ? text : "");
+		}));
 
 		// —— 9. human callback ——
-		HumanNode humanNode = new HumanNode("conditioned",
-				st -> st.value("tool_result").map(r -> r.toString().contains("ERROR")).orElse(false),
-				st -> Map.of("answer", st.value("tool_result").orElse("").toString()));
-		graph.addNode("humanReview", AsyncNodeAction.node_async(humanNode));
+		// HumanNode was removed in 2.0.0-M1.1; map tool_result into the answer with a plain node action.
+		graph.addNode("humanReview", AsyncNodeAction.node_async(
+				state -> Map.of("answer", state.value("tool_result").orElse("").toString())));
 
 		// —— 10. end print (this node need to defined in ssa)——
 		AnswerNode ansNode = AnswerNode.builder().answer("{{answer}}").build();
@@ -162,7 +186,8 @@ public class ComplexSupportGraphBuilder {
 			.addEdge("classify", "retrieveDocs")
 			.addEdge("retrieveDocs", "syncTicket")
 			// .addEdge("filterDocs", "syncTicket")
-			.addEdge("syncTicket", "invokeLLM")
+			.addEdge("syncTicket", "extractHttpBody")
+			.addEdge("extractHttpBody", "invokeLLM")
 			.addEdge("invokeLLM", "invokeTool")
 			.addEdge("invokeTool", "humanReview")
 			.addEdge("humanReview", "finalAnswer")

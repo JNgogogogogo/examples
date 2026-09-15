@@ -35,6 +35,14 @@
     <description>Spring AI Alibaba Graph Example</description>
     <name>Spring AI Alibaba Graph Examples</name>
 
+    <properties>
+        <!-- Upgraded to spring-ai-alibaba 2.0.0-M1.1 (overrides examples parent defaults) -->
+        <spring-ai.version>2.0.0-M1</spring-ai.version>
+        <spring-boot.version>4.0.0</spring-boot.version>
+        <spring-ai-alibaba.version>2.0.0-M1.1</spring-ai-alibaba.version>
+        <spring-ai-alibaba-extensions.version>2.0.0-M1.1</spring-ai-alibaba-extensions.version>
+    </properties>
+
     <modules>
         <module>workflow-review-classifier</module>
         <module>workflow-writing-assistant</module>
@@ -65,6 +73,19 @@
                 <version>${maven-deploy-plugin.version}</version>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <!-- Override parent: newer plugin + proc=full so Lombok works on JDK 23+ -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
+                <configuration>
+                    <release>${java.version}</release>
+                    <proc>full</proc>
+                    <compilerArgs>
+                        <compilerArg>-parameters</compilerArg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
         </plugins>

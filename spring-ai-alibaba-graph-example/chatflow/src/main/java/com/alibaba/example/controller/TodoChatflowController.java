@@ -54,7 +54,7 @@ public class TodoChatflowController {
         input.put("session_id", sessionId);
         input.put("user_input", userInput);
 
-        var stateOpt = mainGraph.call(input, RunnableConfig.builder().threadId(sessionId).build());
+        var stateOpt = mainGraph.invoke(input, RunnableConfig.builder().threadId(sessionId).build());
         OverAllState state = stateOpt.orElseThrow();
 
         Map<String, Object> result = new HashMap<>();

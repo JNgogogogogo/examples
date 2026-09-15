@@ -56,7 +56,7 @@ public class SecGraphController {
     private final CompiledGraph compiledGraph;
 
     public SecGraphController(@Qualifier("secGraph") StateGraph stateGraph) throws GraphStateException {
-        SaverConfig saverConfig = SaverConfig.builder().register(SaverEnum.MEMORY.getValue(), new MemorySaver()).build();
+        SaverConfig saverConfig = SaverConfig.builder().register(new MemorySaver()).build();
 
         this.compiledGraph = stateGraph
                 .compile(CompileConfig.builder().saverConfig(saverConfig).interruptBefore("human").build());
@@ -68,7 +68,7 @@ public class SecGraphController {
         RunnableConfig runnableConfig = RunnableConfig.builder().threadId(threadId).build();
         GraphProcess graphProcess = new GraphProcess(this.compiledGraph);
         Sinks.Many<ServerSentEvent<String>> sink = Sinks.many().unicast().onBackpressureBuffer();
-        Flux<NodeOutput> resultFuture = compiledGraph.fluxStream(Map.of("field", fieldName), runnableConfig);
+        Flux<NodeOutput> resultFuture = compiledGraph.stream(Map.of("field", fieldName), runnableConfig);
         graphProcess.processStream(resultFuture, sink);
         return sink.asFlux()
                 .doOnCancel(() -> log.info("Client disconnected from stream"))
@@ -79,20 +79,17 @@ public class SecGraphController {
     @GetMapping(value = "/resume", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<String>> resume(@RequestParam(value = "thread_id", defaultValue = "yhong", required = false) String threadId,
                                                 @RequestParam(value = "feed_back", defaultValue = "true", required = false) boolean feedBack,
-                                                @RequestParam(value = "feedback_reason", defaultValue = "", required = false) String humanReason) throws GraphRunnerException {
+                                                @RequestParam(value = "feedback_reason", defaultValue = "", required = false) String humanReason) throws Exception {
         RunnableConfig runnableConfig = RunnableConfig.builder().threadId(threadId).build();
-        StateSnapshot stateSnapshot = this.compiledGraph.getState(runnableConfig);
-        OverAllState state = stateSnapshot.state();
-        state.withResume();
-
-        Map<String, Object> objectMap = new HashMap<>();
-        objectMap.put("feed_back", feedBack);
-        objectMap.put("feedback_reason", humanReason);
-        state.withHumanFeedback(new OverAllState.HumanFeedback(objectMap, "feed_back"));
+        // merge the human feedback into the checkpointed state, then resume from the interrupt point
+        RunnableConfig resumedConfig = this.compiledGraph.updateState(runnableConfig, Map.of(
+                "feed_back", feedBack,
+                "feedback_reason", humanReason
+        ), null);
 
         Sinks.Many<ServerSentEvent<String>> sink = Sinks.many().unicast().onBackpressureBuffer();
         GraphProcess graphProcess = new GraphProcess(this.compiledGraph);
-        Flux<NodeOutput> resultFuture = compiledGraph.fluxStreamFromInitialNode(state, runnableConfig);
+        Flux<NodeOutput> resultFuture = compiledGraph.stream(null, resumedConfig);
         graphProcess.processStream(resultFuture, sink);
 
         return sink.asFlux()
