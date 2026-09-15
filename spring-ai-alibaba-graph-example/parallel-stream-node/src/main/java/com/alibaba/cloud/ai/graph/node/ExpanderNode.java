@@ -54,7 +54,10 @@ public class ExpanderNode implements NodeAction {
         String query = state.value("query", "");
         Integer expanderNumber = state.value("expander_number", this.NUMBER);
 
-        Flux<ChatResponse> chatResponseFlux = this.chatClient.prompt().user((user) -> user.text(DEFAULT_PROMPT_TEMPLATE.getTemplate()).param("number", expanderNumber).param("query", query)).stream().chatResponse();
+        Flux<ChatResponse> chatResponseFlux = this.chatClient.prompt().user((user) -> user.text(DEFAULT_PROMPT_TEMPLATE.getTemplate()).param("number", expanderNumber).param("query", query)).stream().chatResponse()
+                // 流正常排空时标记节点完成；异常时标记失败（注意：回调在流被框架消费时才触发，而非 apply() 返回时）
+                .doOnComplete(() -> node2Status.put(NODE_NAME, NodeStatus.COMPLETED))
+                .doOnError(e -> node2Status.put(NODE_NAME, NodeStatus.FAILED));
 
         return Map.of("expander_content", chatResponseFlux);
     }

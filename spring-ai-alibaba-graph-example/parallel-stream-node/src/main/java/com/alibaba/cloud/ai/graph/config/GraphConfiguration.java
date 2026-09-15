@@ -16,12 +16,15 @@
 package com.alibaba.cloud.ai.graph.config;
 
 import com.alibaba.cloud.ai.graph.GraphRepresentation;
+import com.alibaba.cloud.ai.graph.GraphResponse;
 import com.alibaba.cloud.ai.graph.KeyStrategy;
 import com.alibaba.cloud.ai.graph.KeyStrategyFactory;
 import com.alibaba.cloud.ai.graph.KeyStrategyFactoryBuilder;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.StateGraph;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
+import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.alibaba.cloud.ai.graph.model.NodeStatus;
 import com.alibaba.cloud.ai.graph.node.ExpanderNode;
@@ -33,8 +36,8 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.cloud.ai.graph.action.AsyncNodeAction.node_async;
 
@@ -58,7 +61,7 @@ public class GraphConfiguration {
                 .addPatternStrategy("merge_result", new ReplaceStrategy())
                 .build();
 
-        Map<String, NodeStatus> node2Status = new HashMap<>();
+        Map<String, NodeStatus> node2Status = new ConcurrentHashMap<>();
 
         StateGraph stateGraph = new StateGraph(keyStrategyFactory)
                 .addNode(ExpanderNode.NODE_NAME, node_async(new ExpanderNode(chatClientBuilder, node2Status)))
@@ -99,11 +102,33 @@ public class GraphConfiguration {
                 return Map.of();
             }
 
-            Object expanderContent = state.value("expander_content").orElse("unknown");
-            String translateContent = (String) state.value("translate_content").orElse("");
+            return Map.of("merge_result", Map.of(
+                    "expander_content", toText(state.value("expander_content").orElse(null)),
+                    "translate_content", toText(state.value("translate_content").orElse(null))));
+        }
 
-            return Map.of("merge_result", Map.of("expander_content", expanderContent,
-                    "translate_content", translateContent));
+        /**
+         * 分支结果在状态中的形态取决于框架对嵌入流的消费方式，可能是：
+         * String（非流式节点直接返回）、AssistantMessage（框架消费流后回写的最终输出）、
+         * GraphResponse（流包装残留）等。统一归一化为纯文本，避免 ClassCastException。
+         */
+        private String toText(Object value) {
+            if (value == null) {
+                return "";
+            }
+            if (value instanceof String s) {
+                return s;
+            }
+            if (value instanceof AssistantMessage am) {
+                return am.getText();
+            }
+            if (value instanceof Message msg) {
+                return msg.getText();
+            }
+            if (value instanceof GraphResponse<?> resp) {
+                return toText(resp.resultValue().orElse(null));
+            }
+            return String.valueOf(value);
         }
 
         private boolean isDone(Map<String, NodeStatus> node2Status) {

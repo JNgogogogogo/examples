@@ -55,7 +55,10 @@ public class TranslateNode implements NodeAction {
         String query = state.value("query", "");
         String targetLanguage = state.value("translate_language", TARGET_LANGUAGE);
 
-        Flux<ChatResponse> chatResponseFlux = this.chatClient.prompt().user((user) -> user.text(DEFAULT_PROMPT_TEMPLATE.getTemplate()).param("targetLanguage", targetLanguage).param("query", query)).stream().chatResponse();
+        Flux<ChatResponse> chatResponseFlux = this.chatClient.prompt().user((user) -> user.text(DEFAULT_PROMPT_TEMPLATE.getTemplate()).param("targetLanguage", targetLanguage).param("query", query)).stream().chatResponse()
+                // 流正常排空时标记节点完成；异常时标记失败（注意：回调在流被框架消费时才触发，而非 apply() 返回时）
+                .doOnComplete(() -> node2Status.put(NODE_NAME, NodeStatus.COMPLETED))
+                .doOnError(e -> node2Status.put(NODE_NAME, NodeStatus.FAILED));
 
         return Map.of("translate_content", chatResponseFlux);
     }
