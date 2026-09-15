@@ -195,7 +195,7 @@ public class GraphConfiguration {
 			.addEdge("end", END);
 
 		// Print graph structure
-		GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.PLANTUML, "Observability Demo");
+		GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.ASCII, "Observability Demo");
 
 		System.out.println("\n=== Observability Demo Graph ===");
 		System.out.println(representation.content());

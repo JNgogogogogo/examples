@@ -79,7 +79,7 @@ public class ParallelGraphConfiguration {
 			.addEdge("merge", END);
 
 		// 可视化
-		GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.PLANTUML, "parallel demo flow");
+		GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.ASCII, "parallel demo flow");
 		System.out.println("\n=== Parallel Demo UML Flow ===");
 		System.out.println(representation.content());
 		System.out.println("==================================\n");

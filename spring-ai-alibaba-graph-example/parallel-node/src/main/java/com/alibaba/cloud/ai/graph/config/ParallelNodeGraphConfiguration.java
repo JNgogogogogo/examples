@@ -71,18 +71,18 @@ public class ParallelNodeGraphConfiguration {
                 .addNode("translator", node_async(new TranslateNode(chatClientBuilder)))
                 .addNode("expander", node_async(new ExpanderNode(chatClientBuilder)))
                 .addNode("collector", node_async(new CollectorNode()))
-                
+
                 // 并行边
                 .addEdge("dispatcher", "translator")
                 .addEdge("dispatcher", "expander")
                 .addEdge("translator", "collector")
                 .addEdge("expander", "collector")
-                
+
                 .addEdge(StateGraph.START, "dispatcher")
                 .addConditionalEdges("collector", edge_async(new CollectorDispatcher()),
                         Map.of("dispatcher", "dispatcher", END, END));
 
-        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
+        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.ASCII,
                 "parallel translator and expander flow");
         logger.info("\n=== Parallel Translator and Expander UML Flow ===");
         logger.info(representation.content());

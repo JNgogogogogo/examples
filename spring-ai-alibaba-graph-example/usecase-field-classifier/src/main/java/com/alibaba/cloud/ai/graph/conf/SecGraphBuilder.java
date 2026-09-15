@@ -112,7 +112,7 @@ public class SecGraphBuilder {
                 .addEdge("saveTool", StateGraph.END);
 
         // 添加 PlantUML 打印
-        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
+        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.ASCII,
                 "sec flow");
         log.info("\n=== expander UML Flow ===");
         log.info(representation.content());

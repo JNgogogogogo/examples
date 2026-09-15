@@ -62,7 +62,7 @@ public class ReactAutoconfiguration {
 
 		CompiledGraph compiledGraph = reactAgent.getAndCompileGraph();
 
-		GraphRepresentation graphRepresentation = compiledGraph.getGraph(GraphRepresentation.Type.PLANTUML);
+		GraphRepresentation graphRepresentation = compiledGraph.getGraph(GraphRepresentation.Type.ASCII);
 		System.out.println("\n\n");
 		System.out.println(graphRepresentation.content());
 		System.out.println("\n\n");

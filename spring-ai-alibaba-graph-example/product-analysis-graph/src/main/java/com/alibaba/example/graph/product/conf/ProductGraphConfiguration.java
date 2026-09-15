@@ -90,7 +90,7 @@ public class ProductGraphConfiguration {
                 .addEdge("specificationExtraction", "merge")
                 .addEdge("merge", END);
 
-        GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.PLANTUML, "Product Analysis Graph");
+        GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.ASCII, "Product Analysis Graph");
         System.out.println("\n=== Product Analysis Graph UML Flow ===");
         System.out.println(representation.content());
         System.out.println("======================================\n");

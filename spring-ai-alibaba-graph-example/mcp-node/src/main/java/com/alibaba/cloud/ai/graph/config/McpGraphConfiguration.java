@@ -64,7 +64,7 @@ public class McpGraphConfiguration {
                 .addEdge("mcp", StateGraph.END);
 
         // 添加 PlantUML 打印
-        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
+        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.ASCII,
                 "mcp flow");
         logger.info("\n=== mcp UML Flow ===");
         logger.info(representation.content());

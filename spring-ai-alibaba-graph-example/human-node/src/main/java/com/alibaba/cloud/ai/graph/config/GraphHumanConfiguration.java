@@ -73,7 +73,7 @@ public class GraphHumanConfiguration {
                 .addEdge("translate", StateGraph.END);
 
         // 添加 PlantUML 打印
-        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
+        GraphRepresentation representation = stateGraph.getGraph(GraphRepresentation.Type.ASCII,
                 "human flow");
         logger.info("\n=== expander UML Flow ===");
         logger.info(representation.content());

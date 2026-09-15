@@ -79,7 +79,7 @@ public class WritingAssistantAutoconfiguration {
 			.addEdge("title_generator", END);
 
 		// 添加 PlantUML 打印
-		GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.PLANTUML,
+		GraphRepresentation representation = graph.getGraph(GraphRepresentation.Type.ASCII,
 				"writing assistant flow");
 		System.out.println("\n=== Writing Assistant UML Flow ===");
 		System.out.println(representation.content());

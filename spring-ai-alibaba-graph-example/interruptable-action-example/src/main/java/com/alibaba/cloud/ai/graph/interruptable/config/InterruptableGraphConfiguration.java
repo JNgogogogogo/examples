@@ -105,7 +105,7 @@ public class InterruptableGraphConfiguration {
     private void printGraphRepresentation(StateGraph graph, String graphName) {
         try {
             GraphRepresentation representation = graph.getGraph(
-                GraphRepresentation.Type.PLANTUML, 
+                GraphRepresentation.Type.ASCII, 
                 graphName
             );
             logger.info("\n========== {} ==========\n{}\n====================\n", 

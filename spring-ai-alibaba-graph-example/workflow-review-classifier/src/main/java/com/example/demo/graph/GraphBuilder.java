@@ -126,7 +126,7 @@ public class GraphBuilder {
     }
 
     private static void printGraphImage(StateGraph stateGraph) {
-        GraphRepresentation graphRepresentation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
+        GraphRepresentation graphRepresentation = stateGraph.getGraph(GraphRepresentation.Type.ASCII,
                 "workflow graph");
         System.out.println("\n\n");
         System.out.println(graphRepresentation.content());
