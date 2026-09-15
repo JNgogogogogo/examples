@@ -58,7 +58,7 @@ public class ProductGraphConfiguration {
         NodeAction marketingCopyNode = state -> {
             String productDesc = (String) state.value("productDesc").orElseThrow();
             String slogan = client.prompt()
-                    .user("Generate a catchy slogan for a product with the following description: " + productDesc)
+                    .user("Return no more than 20 words，Generate a catchy slogan for a product with the following description: " + productDesc)
                     .call()
                     .content();
             return Map.of("slogan", slogan);
